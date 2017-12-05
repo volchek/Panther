@@ -3,66 +3,22 @@ import sys
 import struct
 import time
 import json
+from util.utility import Action, Response, Result, ServerData
 from enum import Enum
 from random import randint
-from world import World
-
-
-class Action(Enum):
-    LOGIN = 1
-    LOGOUT = 2
-    MOVE = 3
-    TURN = 5
-    MAP = 10
-    
-
-class Result(Enum):
-
-    OKEY = 0
-    BAD_COMMAND = 1
-    RESOURCE_NOT_FOUND = 2
-    PATH_NOT_FOUND = 3
-    ACCESS_DENIED = 5
-    
-    
-class Response(Enum):
-
-    HEADER_ONLY = 7
-    FULL = 8
-    
-    
-class Train(object):
-    
-    def __init__(self, json):
-        self.speed = json["speed"]
-        self.position = json["position"]
-        self.line_idx = json["line_idx"]
-        self.idx = json["idx"]
-      
-      
-class PlayerData(object):
-    
-    def __init__(self, initial_data):
-        if initial_data["home"]:
-            self.home_idx = initial_data["home"]["idx"]
-        self.train_list = [Train(train_data) for train_data in initial_data["train"]]
-        self.idx = initial_data["idx"]
-        self.train_count = len(self.train_list)
-        self.last_stopped_train_idx = 0
-    
-    def update_train_list(self, train):
-        self.train_list = [Train(train_data) for train_data in train]    
+from world.world import World
+from world.path import Path
+from world.train import Train
+from world.player import Player
         
-
+ 
+    
 class Client(object):
-
-    HOST  = 'wgforge-srv.wargaming.net'
-    PORT = 443
 
     def __init__(self, name):
         self.name = name
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((Client.HOST,Client.PORT))   
+        self.sock.connect((ServerData.HOST,ServerData.PORT))   
         
     def close_socket(self):
         self.sock.close()
@@ -71,17 +27,14 @@ class Client(object):
         s = str(json_data).replace("'","\"")
         return struct.pack("II%ds" % len(s), type, len(s), s.encode('utf-8'))
     
-    def get_response(self, response_type, attempt_count):
+    def get_response(self, response_size_type, attempt_count):
         data = ""
-        time.sleep(0.5)
         for a in xrange(attempt_count):
-            print "attempt ", a
             data = data + self.sock.recv(4096)
-            print "received string of size: ", len(data)
-            if len(data) > response_type:
+            if len(data) > response_size_type:
                 code, size, json_data = struct.unpack("II%ds" % (len(data) - 8), data)
                 answer = {}
-                if response_type == Response.FULL:
+                if response_size_type == Response.FULL:
                     answer = json.loads(json_data)
                 break
             time.sleep(0.5)
@@ -92,7 +45,7 @@ class Client(object):
         self.sock.send(message)
         code, answer = self.get_response(Response.FULL, 10)
         if code == Result.OKEY:
-            self.state = PlayerData(answer)
+            self.state = Player(answer)
         return code, answer    
         
     def get_static_map(self):
@@ -106,19 +59,21 @@ class Client(object):
     def get_dynamic_map(self):
         message = self.get_byte_message(Action.MAP, {"layer":1})
         self.sock.send(message)
-        return self.get_response(Response.FULL, 10)
-        
-    def get_train_state(self):
-        code, answer = self.get_dynamic_map()
+        code, answer = self.get_response(Response.FULL, 10)
         if code == Result.OKEY:
+            self.world.update_market_info(answer)
+            self.state.update_town_info(answer)
             self.state.update_train_list(answer["train"])
-            
+        return code, answer    
+        
+              
     def get_train_point_idx(self, train_idx):
         if not(self.state.train_list[train_idx].position):
             return self.state.home_idx
-        if self.state.train_list[train_idx].position == 10:
-            return self.world.get_end_points(self.state.train_list[train_idx].line_idx)[1]
-        return self.world.get_end_points(self.state.train_list[train_idx].line_idx)[0]    
+        line_idx = self.state.train_list[train_idx].line_idx    
+        if self.state.train_list[train_idx].position == self.world.get_line_length(line_idx):
+            return self.world.get_end_points(line_idx)[1]
+        return self.world.get_end_points(line_idx)[0]    
             
                 
     def move(self, line_idx, speed, train_idx):
@@ -128,15 +83,10 @@ class Client(object):
     
     def wait_next_stop(self):
         if self.state.train_count > 0:
-            a = 0
             while True:
-                print "\nWAITING TICK NUMBER ", a
-                time.sleep(0.5)
-                self.get_train_state()
-                print("STATE: ")
-                for item in self.state.train_list:
-                    print("Train idx {0} line {1} speed {2} position {3}".format(item.idx, item.line_idx, item.speed, item.position))
-                a = a + 1
+                self.state.one_more_tick()
+                self.get_dynamic_map()
+                self.state.display()
                 i = 0
                 while i < self.state.train_count:
                     train = self.state.train_list[i]
@@ -158,10 +108,67 @@ class Client(object):
         speed = 1
         print("\nMOVE train_idx {0} line: {1} speed: {2}".format(train.idx, line_idx, speed))
         code, answer = self.move(line_idx, speed, train.idx)
-        print code, answer
         return True
         
+    def find_useful_paths(self):
+        market_ids = self.world.get_market_ids()
+        self.paths = {}
+        path_counter = 0
+        for id in market_ids: #one-shop pathes
+            path,length = self.world.get_shortest_path(self.state.post_id, id)
+            if self.world.get_max_income([id], 2*length, self.state.cur_population) > 0:
+                self.paths[path_counter] = Path([id],{id:length},path[1:]+path[::-1][1:],2*length)
+                path_counter += 1
+        for id1 in market_ids: #two-shop pathes
+            for id2 in market_ids:
+                if id1 != id2:
+                    path1,length1 = self.world.get_shortest_path(self.state.post_id, id1)
+                    path2,length2 = self.world.get_shortest_path(id1, id2)
+                    path3,length3 = self.world.get_shortest_path(id2, self.state.post_id)
+                    market_list = [id1, id2]
+                    length = length1+length2+length3
+                    if self.world.get_max_income(market_list, length, self.state.cur_population) > 0:
+                        self.paths[path_counter] = Path(market_list,{id1:length1, id2: length1+length2},path1[1:]+path2[1:]+path3[1:],length)
+                        path_counter += 1
+                        
+                        
+    def find_best_path_id(self):
+        max_score_path_id = -1
+        max_score = 0
+        for path_id in self.paths:
+            score = self.paths[path_id].get_score(self.world, self.state.cur_population)
+            if score > max_score: 
+                max_score = score
+                max_score_path_id = path_id
+        return max_score_path_id
+
+    def move_path(self, path_id, train):
+        prev_point = self.state.post_id
+        for point in self.paths[path_id].path:
+            if (prev_point, point) in self.world.edge_labels:
+                line_idx = self.world.edge_labels[(prev_point, point)]["id"]
+            elif (point, prev_point) in self.world.edge_labels:
+                line_idx = self.world.edge_labels[(point, prev_point)]["id"]
+            else:
+                break
+            speed = 1
+            print("\nMOVE train_idx {0} line: {1} speed: {2}".format(train.idx, line_idx, speed))
+            code, answer = self.move(line_idx, speed, train.idx)
+            prev_point = point
+            self.wait_next_stop()
+            
+            
     def play(self):
+        self.find_useful_paths()
+        best_path_id = self.find_best_path_id()
+        train = self.state.train_list[0]
+        self.move_path(best_path_id, train)
+        while self.state.everybody_alive():
+            best_path_id = self.find_best_path_id()
+            self.move_path(best_path_id, train)
+            
+    def random_play(self):
+        
         if self.state.train_count > 0:
         
             for train in self.state.train_list:
@@ -170,9 +177,8 @@ class Client(object):
                     break
             self.wait_next_stop()
             
-           
-            while True: #move until lines starting from train's current point_idx exists
-                train = self.state.train_list[self.state.last_stopped_train_idx]
+            while self.state.everybody_alive(): #move until lines starting from train's current point_idx exists
+                train = self.state.train_list[self.state.last_stopped_train_idx] #and everybody alive
                 is_moving = self.start_moving(train)
                 if not is_moving:
                     break
