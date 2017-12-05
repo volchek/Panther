@@ -22,8 +22,9 @@ class Response(Enum):
     HEADER_ONLY = 7
     FULL = 8
     
+   
+class ServerData(object):
 
-class PostType(Enum):
-
-    HOME = 1
-    MARKET = 2
+    HOST  = 'wgforge-srv.wargaming.net'
+    PORT = 443
+    QUANT = 10  

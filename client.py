@@ -3,75 +3,15 @@ import sys
 import struct
 import time
 import json
-from utility import Action, Response, Result
+from util.utility import Action, Response, Result, ServerData
 from enum import Enum
 from random import randint
-from world import World
-
-   
-class Train(object):
-    
-    def __init__(self, json):
-        self.speed = json["speed"]
-        self.position = json["position"]
-        self.line_idx = json["line_idx"]
-        self.idx = json["idx"]
-      
-      
-class Player(object):
-    
-    def __init__(self, initial_data):
-        if initial_data["home"]:
-            self.home_idx = initial_data["home"]["idx"]
-            self.post_id = initial_data["home"]["post_id"]
-        else:
-            self.home_idx = -1
-            self.post_id = -1
-        self.train_list = [Train(train_data) for train_data in initial_data["train"]]
-        self.idx = initial_data["idx"]
-        self.train_count = len(self.train_list)
-        if initial_data["town"]:
-            self.product = initial_data["town"]["product"]
-            self.init_population = initial_data["town"]["population"]
-            self.cur_population = initial_data["town"]["population"]
-        else:
-            self.product = -1
-            self.init_population = -1
-            self.cur_population = -1
-        self.last_stopped_train_idx = 0
-        self.tick_count = 0
-    
-    def everybody_alive(self):
-        return self.cur_population == self.init_population
+from world.world import World
+from world.path import Path
+from world.train import Train
+from world.player import Player
         
-    def display(self):
-        print("\nSTATE: ")
-        print("population {0} product {1}".format(self.cur_population, self.product))
-        for item in self.train_list:
-            print("Train idx {0} line {1} speed {2} position {3}".format(item.idx, item.line_idx, item.speed, item.position))
  
-    def one_more_tick(self):
-        time.sleep(ServerData.QUANT)
-        self.tick_count += 1
-        print "\nTICK ", self.tick_count                    
-        
-    def update_train_list(self, train):
-        self.train_list = [Train(train_data) for train_data in train]   
-
-    def update_town_info(self, answer):
-        for post in answer["post"]:
-            if post["idx"] == self.post_id:
-                self.product = post["product"]
-                self.cur_population = post["population"]
-                break    
-        
-        
-
-class ServerData(object):
-
-    HOST  = 'wgforge-srv.wargaming.net'
-    PORT = 443
-    QUANT = 10     
     
 class Client(object):
 
@@ -170,7 +110,65 @@ class Client(object):
         code, answer = self.move(line_idx, speed, train.idx)
         return True
         
+    def find_useful_paths(self):
+        market_ids = self.world.get_market_ids()
+        self.paths = {}
+        path_counter = 0
+        for id in market_ids: #one-shop pathes
+            path,length = self.world.get_shortest_path(self.state.post_id, id)
+            if self.world.get_max_income([id], 2*length, self.state.cur_population) > 0:
+                self.paths[path_counter] = Path([id],{id:length},path[1:]+path[::-1][1:],2*length)
+                path_counter += 1
+        for id1 in market_ids: #two-shop pathes
+            for id2 in market_ids:
+                if id1 != id2:
+                    path1,length1 = self.world.get_shortest_path(self.state.post_id, id1)
+                    path2,length2 = self.world.get_shortest_path(id1, id2)
+                    path3,length3 = self.world.get_shortest_path(id2, self.state.post_id)
+                    market_list = [id1, id2]
+                    length = length1+length2+length3
+                    if self.world.get_max_income(market_list, length, self.state.cur_population) > 0:
+                        self.paths[path_counter] = Path(market_list,{id1:length1, id2: length1+length2},path1[1:]+path2[1:]+path3[1:],length)
+                        path_counter += 1
+                        
+                        
+    def find_best_path_id(self):
+        max_score_path_id = -1
+        max_score = 0
+        for path_id in self.paths:
+            score = self.paths[path_id].get_score(self.world, self.state.cur_population)
+            if score > max_score: 
+                max_score = score
+                max_score_path_id = path_id
+        return max_score_path_id
+
+    def move_path(self, path_id, train):
+        prev_point = self.state.post_id
+        for point in self.paths[path_id].path:
+            if (prev_point, point) in self.world.edge_labels:
+                line_idx = self.world.edge_labels[(prev_point, point)]["id"]
+            elif (point, prev_point) in self.world.edge_labels:
+                line_idx = self.world.edge_labels[(point, prev_point)]["id"]
+            else:
+                break
+            speed = 1
+            print("\nMOVE train_idx {0} line: {1} speed: {2}".format(train.idx, line_idx, speed))
+            code, answer = self.move(line_idx, speed, train.idx)
+            prev_point = point
+            self.wait_next_stop()
+            
+            
     def play(self):
+        self.find_useful_paths()
+        best_path_id = self.find_best_path_id()
+        train = self.state.train_list[0]
+        self.move_path(best_path_id, train)
+        while self.state.everybody_alive():
+            best_path_id = self.find_best_path_id()
+            self.move_path(best_path_id, train)
+            
+    def random_play(self):
+        
         if self.state.train_count > 0:
         
             for train in self.state.train_list:
@@ -179,13 +177,11 @@ class Client(object):
                     break
             self.wait_next_stop()
             
-            counter = 0
             while self.state.everybody_alive(): #move until lines starting from train's current point_idx exists
                 train = self.state.train_list[self.state.last_stopped_train_idx] #and everybody alive
                 is_moving = self.start_moving(train)
                 if not is_moving:
                     break
-                counter = counter+1 
                 self.wait_next_stop()
             
             

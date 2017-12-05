@@ -1,27 +1,9 @@
 import networkx as nx
 import json
-from utility import PostType
+from line import Line
+from post import Post, PostType
 import matplotlib.pyplot as plt
-
-class Line(object):
-
-    def __init__(self, line_data):
-        self.start_point_idx = line_data["point"][0]
-        self.end_point_idx = line_data["point"][1]
-        self.length = line_data["length"]
-        self.idx = line_data["idx"]
-        
-class Post(object):
-     
-    def __init__(self, post_data):
-        self.idx = post_data["idx"]
-        self.product = post_data["product"]
-        if post_data["type"] == PostType.HOME:
-            self.population = post_data["population"]
-        else:    
-            self.replenishment = post_data["replenishment"]
-            self.capacity = post_data["product_capacity"]
-        
+  
 class World(object):
 
     def __init__(self, static_map):
@@ -32,6 +14,9 @@ class World(object):
         self.edge_labels=dict([((line["point"][0],line["point"][1]),{"id": line["idx"], "weight":line["length"]})
              for line in static_map["line"]])
         self.start_point_to_line_idx = {}
+        self.shortest_path=dict(nx.all_pairs_dijkstra_path(self.graph))
+        self.length=dict(nx.all_pairs_dijkstra_path_length(self.graph))
+        self.post_id_to_point = {point["post_id"]:point["idx"] for point in static_map["point"] if point["post_id"]}
         for line in static_map["line"]:
             start_idx = line["point"][0]
             if start_idx not in self.start_point_to_line_idx:
@@ -41,6 +26,26 @@ class World(object):
     
     def update_market_info(self, dynamic_map):
         self.markets = {post["idx"]:Post(post) for post in dynamic_map["post"] if post["type"] == PostType.MARKET}
+        
+    def get_market_ids(self):
+        return self.markets.keys();
+    
+    def get_shortest_path(self, post_id1, post_id2):
+        if post_id1 == PostType.EMPTY or post_id2 == PostType.EMPTY:
+            return [],0
+        id1 = self.post_id_to_point[post_id1]
+        id2 = self.post_id_to_point[post_id2]
+        return self.shortest_path[id1][id2], self.length[id1][id2]
+        
+    def get_max_income(self, market_ids, length, population):
+        income = 0
+        for mid in market_ids:
+            income += self.markets[mid].capacity
+        income -= population*length
+        return income    
+        
+    def get_potential_market_product(self, id, timeout):
+        return max(self.markets[id].product+timeout*self.markets[id].replenishment, self.markets[id].capacity)
         
     def display_map(self):
         pos = nx.spring_layout(self.graph)
