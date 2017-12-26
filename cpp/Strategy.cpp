@@ -149,5 +149,10 @@ void Strategy::strategy(){
 		}
 	}
 	client.turn();
-	update();
+	try {
+		update();
+	}
+	catch (std::exception& e){
+		std::cout << e.what() << std::endl;
+	}
 }

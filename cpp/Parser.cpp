@@ -51,10 +51,14 @@ void Parser::parse_static_map(std::vector<uint8_t>& msg){
 
 
 void Parser::parse_dynamic_map(std::vector<uint8_t>& msg){
-	auto json_object = json::parse(msg.begin(), msg.end());
-	update_train(json_object, false);
-	update_settlements(json_object, false);
-	update_rating(json_object);
+	try {
+		auto json_object = json::parse(msg.begin(), msg.end());
+		update_train(json_object, false);
+		update_settlements(json_object, false);
+		update_rating(json_object);
+	} catch (std::exception& e){
+		std::cout << e.what() << std::endl;
+	}
 }
 
 void Parser::update_state(std::vector<uint8_t>& msg){
@@ -151,7 +155,7 @@ void Parser::update_train(json& obj, bool is_created){
 
 	auto data = obj[dm::train_name];
 	int size = data.size();
-
+	
 	for (int i = 0; i < size; ++i){
 		int id = get_int_property(obj, dm::train_name, i, trk::id);
 		int product = get_int_property(obj, dm::train_name, i, trk::product);
