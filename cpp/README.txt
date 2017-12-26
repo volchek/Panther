@@ -1,0 +1,1 @@
+This requires asio (https://think-async.com) and nlohmann-json (https://github.com/nlohmann/json). Specify the paths to both libraries in compile.bat. GCC 7.1.0 has been used to compile the source; you may use any compiler with C++11 support, but be sure to adjust the .bat file properly.

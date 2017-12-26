@@ -1,0 +1,2 @@
+python visualizer.py
+pause

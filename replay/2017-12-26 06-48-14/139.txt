@@ -1,0 +1,281 @@
+{
+    "idx": 1,
+    "post": [
+        {
+            "armor": 59,
+            "armor_capacity": 200,
+            "event": [
+                {
+                    "population": 0,
+                    "tick": 138,
+                    "type": 100
+                },
+                {
+                    "parasites_power": 3,
+                    "tick": 138,
+                    "type": 3
+                }
+            ],
+            "idx": 1,
+            "level": 1,
+            "name": "Kiev",
+            "next_level_price": 100,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "point_id": 1,
+            "population": 0,
+            "population_capacity": 10,
+            "product": 182,
+            "product_capacity": 200,
+            "train_cooldown_on_collision": 2,
+            "type": 1
+        },
+        {
+            "armor": 100,
+            "armor_capacity": 200,
+            "event": [],
+            "idx": 2,
+            "level": 1,
+            "name": "Minsk",
+            "next_level_price": 100,
+            "player_id": null,
+            "point_id": 10,
+            "population": 0,
+            "population_capacity": 10,
+            "product": 200,
+            "product_capacity": 200,
+            "train_cooldown_on_collision": 2,
+            "type": 1
+        },
+        {
+            "armor": 100,
+            "armor_capacity": 200,
+            "event": [],
+            "idx": 3,
+            "level": 1,
+            "name": "Saint Petersburg",
+            "next_level_price": 100,
+            "player_id": null,
+            "point_id": 91,
+            "population": 0,
+            "population_capacity": 10,
+            "product": 200,
+            "product_capacity": 200,
+            "train_cooldown_on_collision": 2,
+            "type": 1
+        },
+        {
+            "armor": 100,
+            "armor_capacity": 200,
+            "event": [],
+            "idx": 4,
+            "level": 1,
+            "name": "Tallinn",
+            "next_level_price": 100,
+            "player_id": null,
+            "point_id": 100,
+            "population": 0,
+            "population_capacity": 10,
+            "product": 200,
+            "product_capacity": 200,
+            "train_cooldown_on_collision": 2,
+            "type": 1
+        },
+        {
+            "event": [],
+            "idx": 5,
+            "name": "market-01",
+            "point_id": 34,
+            "product": 500,
+            "product_capacity": 500,
+            "replenishment": 10,
+            "type": 2
+        },
+        {
+            "event": [],
+            "idx": 6,
+            "name": "market-02",
+            "point_id": 37,
+            "product": 500,
+            "product_capacity": 500,
+            "replenishment": 10,
+            "type": 2
+        },
+        {
+            "event": [],
+            "idx": 7,
+            "name": "market-03",
+            "point_id": 64,
+            "product": 500,
+            "product_capacity": 500,
+            "replenishment": 10,
+            "type": 2
+        },
+        {
+            "event": [],
+            "idx": 8,
+            "name": "market-04",
+            "point_id": 67,
+            "product": 500,
+            "product_capacity": 500,
+            "replenishment": 10,
+            "type": 2
+        },
+        {
+            "armor": 20,
+            "armor_capacity": 20,
+            "event": [],
+            "idx": 9,
+            "name": "storage-01",
+            "point_id": 45,
+            "replenishment": 5,
+            "type": 3
+        },
+        {
+            "armor": 20,
+            "armor_capacity": 20,
+            "event": [],
+            "idx": 10,
+            "name": "storage-02",
+            "point_id": 46,
+            "replenishment": 5,
+            "type": 3
+        },
+        {
+            "armor": 20,
+            "armor_capacity": 20,
+            "event": [],
+            "idx": 11,
+            "name": "storage-03",
+            "point_id": 55,
+            "replenishment": 5,
+            "type": 3
+        },
+        {
+            "armor": 20,
+            "armor_capacity": 20,
+            "event": [],
+            "idx": 12,
+            "name": "storage-04",
+            "point_id": 56,
+            "replenishment": 5,
+            "type": 3
+        }
+    ],
+    "rating": {
+        "Panthaarrrr": 321
+    },
+    "train": [
+        {
+            "cooldown": 0,
+            "event": [],
+            "goods": 5,
+            "goods_capacity": 80,
+            "idx": 1,
+            "level": 2,
+            "line_idx": 2,
+            "next_level_price": 80,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "position": 3,
+            "post_type": 3,
+            "speed": -1
+        },
+        {
+            "cooldown": 0,
+            "event": [],
+            "goods": 5,
+            "goods_capacity": 80,
+            "idx": 2,
+            "level": 2,
+            "line_idx": 4,
+            "next_level_price": 80,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "position": 1,
+            "post_type": 3,
+            "speed": -1
+        },
+        {
+            "cooldown": 0,
+            "event": [],
+            "goods": 20,
+            "goods_capacity": 40,
+            "idx": 3,
+            "level": 1,
+            "line_idx": 2,
+            "next_level_price": 40,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "position": 2,
+            "post_type": 3,
+            "speed": -1
+        },
+        {
+            "cooldown": 0,
+            "event": [],
+            "goods": 10,
+            "goods_capacity": 40,
+            "idx": 4,
+            "level": 1,
+            "line_idx": 4,
+            "next_level_price": 40,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "position": 3,
+            "post_type": 3,
+            "speed": -1
+        },
+        {
+            "cooldown": 0,
+            "event": [],
+            "goods": 10,
+            "goods_capacity": 40,
+            "idx": 5,
+            "level": 1,
+            "line_idx": 4,
+            "next_level_price": 40,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "position": 0,
+            "post_type": 3,
+            "speed": 0
+        },
+        {
+            "cooldown": 0,
+            "event": [],
+            "goods": 5,
+            "goods_capacity": 40,
+            "idx": 6,
+            "level": 1,
+            "line_idx": 3,
+            "next_level_price": 40,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "position": 1,
+            "post_type": 3,
+            "speed": -1
+        },
+        {
+            "cooldown": 0,
+            "event": [],
+            "goods": 5,
+            "goods_capacity": 40,
+            "idx": 7,
+            "level": 1,
+            "line_idx": 3,
+            "next_level_price": 40,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "position": 0,
+            "post_type": 3,
+            "speed": 0
+        },
+        {
+            "cooldown": 0,
+            "event": [],
+            "goods": 5,
+            "goods_capacity": 40,
+            "idx": 8,
+            "level": 1,
+            "line_idx": 3,
+            "next_level_price": 40,
+            "player_id": "72ab7e6a-1277-4eea-bae8-7c568bd1419d",
+            "position": 2,
+            "post_type": 3,
+            "speed": -1
+        }
+    ]
+}
